@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MapMaker Video</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    /* Fill the iframe completely. The MediaSpace player is itself 16:9,
+       so as long as the host iframe is set to a 16:9-ish height (e.g. 650
+       at desktop width, matching the local player cards) it fills cleanly. */
+    .wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .wrap iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    /* Error state — shown if no entry id is supplied */
+    .error {
+      color: #1a1a1a;
+      font-family: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      padding: 24px;
+      text-align: center;
+      max-width: 520px;
+      margin: 40px auto;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 6px;
+    }
+    .error code {
+      background: rgba(0, 0, 0, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="wrap"></div>
+
+  <script>
+    // -----------------------------------------------------------------------
+    // Resolve MediaSpace embed from URL parameters
+    // -----------------------------------------------------------------------
+    // Usage:  mediaspace.html?entry=1_jgrq6zt0&uiconf=49806163
+    //
+    //   entry   = the MediaSpace entryId (required)
+    //   uiconf  = the uiConfId / playerId (optional; falls back to default)
+    //   title   = optional accessible title for the iframe
+    //
+    // This builds the MediaSpace /embed/secure/iframe/ URL — the embed form,
+    // NOT the /id/ share URL. The embed form is the one designed to render
+    // inside an iframe.
+
+    const params = new URLSearchParams(window.location.search);
+    const entry = params.get('entry');
+    const uiconf = params.get('uiconf') || '49806163';   // default player config
+    const title = params.get('title') || 'MapMaker video';
+
+    const wrap = document.getElementById('wrap');
+
+    if (!entry) {
+      wrap.innerHTML =
+        '<div class="error">' +
+          'No video specified. Add <code>?entry=&lt;entryId&gt;</code> to the URL ' +
+          '(for example <code>mediaspace.html?entry=1_jgrq6zt0&amp;uiconf=49806163</code>).' +
+        '</div>';
+    } else {
+      const src = 'https://mediaspace.esri.com/embed/secure/iframe/entryId/' +
+                  encodeURIComponent(entry) +
+                  '/uiConfId/' + encodeURIComponent(uiconf);
+
+      const iframe = document.createElement('iframe');
+      iframe.src = src;
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('webkitallowfullscreen', '');
+      iframe.setAttribute('mozAllowFullScreen', '');
+      iframe.setAttribute('allow', 'autoplay *; fullscreen *; encrypted-media *');
+      iframe.setAttribute('referrerPolicy', 'no-referrer-when-downgrade');
+      iframe.setAttribute('frameborder', '0');
+      iframe.setAttribute('title', title);
+
+      wrap.appendChild(iframe);
+    }
+  </script>
+</body>
+</html>
