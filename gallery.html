@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MapMaker How To — Video Gallery</title>
+  <style>
+    /* ===================================================================
+       VIDEO LIST — edit here
+       Each entry: { title, embed }.
+       - title : shown on the card (edit anytime)
+       - embed : the full iframe embed URL for that video's platform
+       Add a video = add a line. Remove = delete a line. Reorder freely.
+       =================================================================== */
+
+    /* (the list itself lives in the <script> at the bottom) */
+
+    :root {
+      --ng-yellow: #FFCC00;
+      --ink: #1a1a1a;
+      --ink-soft: #4a4a4a;
+      --line: #e4e4e4;
+      --card-bg: #ffffff;
+      --page-bg: #ffffff;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      background: var(--page-bg);
+      font-family: 'Avenir Next', Avenir, 'Segoe UI', system-ui, sans-serif;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .gallery-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+
+    /* --- Grid --- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    /* --- Card --- */
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      border: 2px solid transparent;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .card:hover,
+    .card:focus-visible {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+      border-color: var(--ng-yellow);
+      outline: none;
+    }
+
+    /* Thumbnail area — a designed panel, not a video frame.
+       Uses a layered dark teal/green so the yellow play button pops,
+       echoing the NatGeo frame without copying the logo. */
+    .card__thumb {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      width: 100%;
+      background:
+        radial-gradient(120% 120% at 75% 15%, #2f6d5b 0%, #1d4a3e 55%, #143229 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    /* faint contour-line texture for a maps feel */
+    .card__thumb::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 22px),
+        repeating-linear-gradient(25deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 30px);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    .card__playicon {
+      position: relative;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(255, 204, 0, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.22s ease, background 0.22s ease;
+    }
+    .card:hover .card__playicon,
+    .card:focus-visible .card__playicon {
+      transform: scale(1.08);
+    }
+    .card__playicon svg {
+      width: 26px;
+      height: 26px;
+      fill: #143229;
+      margin-left: 4px;
+    }
+
+    /* index tag, top-left */
+    .card__tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+      z-index: 2;
+    }
+
+    .card__body {
+      padding: 16px 18px 20px;
+      border-top: 3px solid var(--ng-yellow);
+    }
+    .card__title {
+      font-size: 1.02rem;
+      font-weight: 600;
+      line-height: 1.32;
+      color: var(--ink);
+    }
+    .card__hint {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+      letter-spacing: 0.01em;
+    }
+
+    /* --- Lightbox --- */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 16, 13, 0.82);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+      z-index: 1000;
+    }
+    .lightbox.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .lightbox__inner {
+      position: relative;
+      width: 100%;
+      max-width: 960px;
+      transform: translateY(12px) scale(0.98);
+      transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    .lightbox.is-open .lightbox__inner {
+      transform: translateY(0) scale(1);
+    }
+    .lightbox__frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+    .lightbox__frame iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+    .lightbox__caption {
+      margin-top: 14px;
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    .lightbox__close {
+      position: absolute;
+      top: -14px;
+      right: -14px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: var(--ng-yellow);
+      color: #143229;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      transition: transform 0.18s ease;
+      z-index: 2;
+    }
+    .lightbox__close:hover,
+    .lightbox__close:focus-visible {
+      transform: scale(1.1);
+      outline: none;
+    }
+    @media (max-width: 560px) {
+      .lightbox { padding: 16px; }
+      .lightbox__close { top: -10px; right: -6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="gallery-shell">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Video player">
+    <div class="lightbox__inner">
+      <button class="lightbox__close" id="lightbox-close" aria-label="Close video">&times;</button>
+      <div class="lightbox__frame" id="lightbox-frame"></div>
+      <div class="lightbox__caption" id="lightbox-caption"></div>
+    </div>
+  </div>
+
+  <script>
+    // ===================================================================
+    // VIDEO LIST — edit here. Add/remove/reorder freely.
+    //   title : shown on the card (edit the text anytime)
+    //   embed : the full iframe embed URL for that video's platform
+    // ===================================================================
+    const videos = [
+      {
+        title: "UK Teacher reactions to National Geographic MapMaker in action",
+        embed: "https://mediaspace.esri.com/embed/secure/iframe/entryId/1_jgrq6zt0/uiConfId/49806163"
+      },
+      {
+        title: "Video two — edit this title",
+        embed: "https://mediaspace.esri.com/embed/secure/iframe/entryId/1_708v3yfy/uiConfId/49806163"
+      },
+      {
+        title: "Video three — edit this title",
+        embed: "https://lgfl.planetestream.com/Embed.aspx?id=8548&code=bu~zGmFsqUsHAW7ht6Z7PSh9qol"
+      }
+    ];
+
+    // ----- Play icon SVG (used in every card) -----
+    const PLAY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+
+    // ----- Build the grid -----
+    const grid = document.getElementById('grid');
+
+    videos.forEach((v, i) => {
+      const card = document.createElement('button');
+      card.className = 'card';
+      card.setAttribute('aria-label', 'Play: ' + v.title);
+      card.innerHTML =
+        '<div class="card__thumb">' +
+          '<span class="card__tag">Video ' + (i + 1) + '</span>' +
+          '<span class="card__playicon">' + PLAY_SVG + '</span>' +
+        '</div>' +
+        '<div class="card__body">' +
+          '<div class="card__title">' + escapeHtml(v.title) + '</div>' +
+          '<div class="card__hint">Click to play</div>' +
+        '</div>';
+      card.addEventListener('click', () => openLightbox(v));
+      grid.appendChild(card);
+    });
+
+    // ----- Lightbox logic -----
+    const lightbox = document.getElementById('lightbox');
+    const frame = document.getElementById('lightbox-frame');
+    const caption = document.getElementById('lightbox-caption');
+    const closeBtn = document.getElementById('lightbox-close');
+
+    function openLightbox(v) {
+      // Build the iframe fresh each time so the video starts clean
+      const iframe = document.createElement('iframe');
+      iframe.src = v.embed;
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('webkitallowfullscreen', '');
+      iframe.setAttribute('mozallowfullscreen', '');
+      iframe.setAttribute('allow', 'autoplay *; fullscreen *; encrypted-media *');
+      iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+      iframe.setAttribute('title', v.title);
+
+      frame.innerHTML = '';
+      frame.appendChild(iframe);
+      caption.textContent = v.title;
+      lightbox.classList.add('is-open');
+      closeBtn.focus();
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('is-open');
+      // Clear the iframe so the video stops playing
+      frame.innerHTML = '';
+      caption.textContent = '';
+    }
+
+    closeBtn.addEventListener('click', closeLightbox);
+    // Click on the dark backdrop (but not the inner content) closes
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+    // Escape key closes
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && lightbox.classList.contains('is-open')) {
+        closeLightbox();
+      }
+    });
+
+    // ----- Small helper: escape titles so stray characters can't break markup -----
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
