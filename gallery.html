@@ -104,6 +104,20 @@
       opacity: 0.7;
       pointer-events: none;
     }
+    /* When a real thumbnail image is supplied, it covers the panel.
+       A soft dark gradient keeps the white play triangle legible on
+       bright frames. The green gradient + contour texture below remain
+       as the fallback for any card without an image. */
+    .card__thumb.has-image {
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .card__thumb.has-image::before {
+      background-image:
+        radial-gradient(60% 60% at 50% 50%, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 70%);
+      opacity: 1;
+    }
     .card__playicon {
       position: relative;
       width: 60px;
@@ -130,19 +144,6 @@
     .card:hover .card__playicon svg,
     .card:focus-visible .card__playicon svg {
       fill: #143229;
-    }
-
-    /* index tag, top-left */
-    .card__tag {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.85);
-      z-index: 2;
     }
 
     .card__body {
@@ -267,16 +268,19 @@
     // ===================================================================
     const videos = [
       {
-        title: "UK Teacher reactions to National Geographic MapMaker in action",
-        embed: "https://mediaspace.esri.com/embed/secure/iframe/entryId/1_jgrq6zt0/uiConfId/49806163"
+        title: "Video two — edit this title",
+        embed: "https://mediaspace.esri.com/embed/secure/iframe/entryId/1_708v3yfy/uiConfId/49806163",
+        thumb: "video2.jpg"
       },
       {
-        title: "Video two — edit this title",
-        embed: "https://mediaspace.esri.com/embed/secure/iframe/entryId/1_708v3yfy/uiConfId/49806163"
+        title: "UK Teacher reactions to National Geographic MapMaker in action",
+        embed: "https://mediaspace.esri.com/embed/secure/iframe/entryId/1_jgrq6zt0/uiConfId/49806163",
+        thumb: "video1.jpg"
       },
       {
         title: "Video three — edit this title",
-        embed: "https://lgfl.planetestream.com/Embed.aspx?id=8548&code=bu~zGmFsqUsHAW7ht6Z7PSh9qol"
+        embed: "https://lgfl.planetestream.com/Embed.aspx?id=8548&code=bu~zGmFsqUsHAW7ht6Z7PSh9qol",
+        thumb: "video3.jpg"
       }
     ];
 
@@ -290,9 +294,13 @@
       const card = document.createElement('button');
       card.className = 'card';
       card.setAttribute('aria-label', 'Play: ' + v.title);
+
+      const thumbStyle = v.thumb
+        ? ' style="background-image:url(\'' + encodeURI(v.thumb) + '\');"'
+        : '';
+
       card.innerHTML =
-        '<div class="card__thumb">' +
-          '<span class="card__tag">Video ' + (i + 1) + '</span>' +
+        '<div class="card__thumb' + (v.thumb ? ' has-image' : '') + '"' + thumbStyle + '>' +
           '<span class="card__playicon">' + PLAY_SVG + '</span>' +
         '</div>' +
         '<div class="card__body">' +
