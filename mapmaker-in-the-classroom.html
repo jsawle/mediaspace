@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MapMaker How To — Video Gallery</title>
+  <style>
+    :root {
+      --ng-yellow: #FFCC00;
+      --ink: #1a1a1a;
+      --ink-soft: #4a4a4a;
+      --card-bg: #ffffff;
+      --page-bg: #ffffff;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: var(--page-bg);
+      font-family: 'Avenir Next', Avenir, 'Segoe UI', system-ui, sans-serif;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    .gallery-shell { max-width: 1180px; margin: 0 auto; padding: 28px 24px 48px; }
+
+    /* --- Grid --- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+    @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+    /* --- Card --- */
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      border: 2px solid transparent;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .card:hover, .card:focus-visible {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+      border-color: #000000;
+      outline: none;
+    }
+
+    /* Thumbnail panel. Real Kaltura frame covers it; green panel is the
+       fallback if the image fails to load. */
+    .card__thumb {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      width: 100%;
+      background:
+        radial-gradient(120% 120% at 75% 15%, #2f6d5b 0%, #1d4a3e 55%, #143229 100%);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .card__thumb::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(60% 60% at 50% 50%, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+    .card__playicon {
+      position: relative;
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.55);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.22s ease, background 0.22s ease;
+    }
+    .card:hover .card__playicon, .card:focus-visible .card__playicon {
+      transform: scale(1.08);
+      background: rgba(255, 204, 0, 0.95);
+    }
+    .card__playicon svg {
+      width: 26px; height: 26px;
+      fill: #ffffff; margin-left: 4px;
+      transition: fill 0.22s ease;
+    }
+    .card:hover .card__playicon svg, .card:focus-visible .card__playicon svg {
+      fill: #143229;
+    }
+    .card__body { padding: 16px 18px 20px; border-top: 3px solid var(--ng-yellow); }
+    .card__title { font-size: 1.02rem; font-weight: 600; line-height: 1.32; color: var(--ink); }
+    .card__hint { margin-top: 8px; font-size: 0.8rem; color: var(--ink-soft); }
+
+    /* --- Lightbox --- */
+    .lightbox {
+      position: fixed; inset: 0;
+      background: rgba(8, 16, 13, 0.88);
+      backdrop-filter: blur(3px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+      z-index: 1000;
+    }
+    .lightbox.is-open { opacity: 1; visibility: visible; }
+    .lightbox__inner {
+      position: relative;
+      width: 100%;
+      max-width: 960px;
+      transform: translateY(12px) scale(0.98);
+      transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1), max-width 0.28s ease;
+    }
+    .lightbox.is-open .lightbox__inner { transform: translateY(0) scale(1); }
+    /* Expanded ("fill") state — push the player to the max the iframe area allows */
+    .lightbox.is-expanded .lightbox__inner { max-width: 100%; }
+    .lightbox__frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+    /* When expanded, let the frame use available height rather than be width-bound */
+    .lightbox.is-expanded .lightbox__frame {
+      max-height: calc(100vh - 130px);
+    }
+    .lightbox__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .lightbox__caption {
+      margin-top: 14px; color: #fff;
+      font-size: 1.05rem; font-weight: 600; text-align: center;
+    }
+    /* Buttons cluster, top-right of the player */
+    .lightbox__btns {
+      position: absolute;
+      top: -16px; right: -10px;
+      display: flex; gap: 8px;
+      z-index: 2;
+    }
+    .lightbox__btn {
+      width: 40px; height: 40px;
+      border-radius: 50%; border: none;
+      background: var(--ng-yellow); color: #143229;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      transition: transform 0.18s ease;
+    }
+    .lightbox__btn:hover, .lightbox__btn:focus-visible { transform: scale(1.1); outline: none; }
+    .lightbox__btn svg { width: 18px; height: 18px; fill: #143229; }
+    .lightbox__btn.close { font-size: 20px; line-height: 1; }
+    @media (max-width: 560px) {
+      .lightbox { padding: 14px; }
+      .lightbox__btns { top: -12px; right: -4px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="gallery-shell">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Video player">
+    <div class="lightbox__inner">
+      <div class="lightbox__btns">
+        <button class="lightbox__btn expand" id="lightbox-expand" aria-label="Expand video" title="Expand">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        </button>
+        <button class="lightbox__btn close" id="lightbox-close" aria-label="Close video" title="Close">&times;</button>
+      </div>
+      <div class="lightbox__frame" id="lightbox-frame"></div>
+      <div class="lightbox__caption" id="lightbox-caption"></div>
+    </div>
+  </div>
+
+  <script>
+    // ===================================================================
+    // THEME VIDEO LIST — edit here, one file per theme.
+    //
+    //   Each video is just:  { title, entry }
+    //     title = card label (edit freely)
+    //     entry = the MediaSpace entryId (e.g. "1_708v3yfy")
+    //
+    //   The embed URL and thumbnail are built automatically from the
+    //   entry id — no need to paste full URLs or make images.
+    //
+    //   To make a new theme page: copy this file, rename it
+    //   (e.g. measuring.html), and replace the list below.
+    // ===================================================================
+    const videos = [
+      { title: "MapMaker celebration at Royal Geographic Association, London.", entry: "1_708v3yfy" },
+      { title: "UK teachers explain the impact and benefits of teaching with MapMaker", entry: "1_jgrq6zt0" },
+    ];
+
+    // --- Config used to build URLs from entry ids ---
+    const UICONF_ID = "49806163";           // MediaSpace player config id
+    const KALTURA_PARTNER = "3057483";      // Esri tenant partner id (for thumbnails)
+
+    function embedUrl(entry) {
+      return "https://mediaspace.esri.com/embed/secure/iframe/entryId/" +
+             encodeURIComponent(entry) + "/uiConfId/" + UICONF_ID;
+    }
+    function thumbUrl(entry) {
+      return "https://www.kaltura.com/p/" + KALTURA_PARTNER +
+             "/thumbnail/entry_id/" + encodeURIComponent(entry) +
+             "/width/640/height/360/type/1";
+    }
+
+    const PLAY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+    const grid = document.getElementById('grid');
+
+    videos.forEach((v) => {
+      const card = document.createElement('button');
+      card.className = 'card';
+      card.setAttribute('aria-label', 'Play: ' + v.title);
+      card.innerHTML =
+        '<div class="card__thumb" style="background-image:url(\'' + thumbUrl(v.entry) + '\');">' +
+          '<span class="card__playicon">' + PLAY_SVG + '</span>' +
+        '</div>' +
+        '<div class="card__body">' +
+          '<div class="card__title">' + escapeHtml(v.title) + '</div>' +
+          '<div class="card__hint">Click to play</div>' +
+        '</div>';
+      card.addEventListener('click', () => openLightbox(v));
+      grid.appendChild(card);
+    });
+
+    // --- Lightbox ---
+    const lightbox = document.getElementById('lightbox');
+    const frame = document.getElementById('lightbox-frame');
+    const caption = document.getElementById('lightbox-caption');
+    const closeBtn = document.getElementById('lightbox-close');
+    const expandBtn = document.getElementById('lightbox-expand');
+
+    function openLightbox(v) {
+      const iframe = document.createElement('iframe');
+      iframe.src = embedUrl(v.entry);
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('webkitallowfullscreen', '');
+      iframe.setAttribute('mozallowfullscreen', '');
+      iframe.setAttribute('allow', 'autoplay *; fullscreen *; encrypted-media *');
+      iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+      iframe.setAttribute('title', v.title);
+      frame.innerHTML = '';
+      frame.appendChild(iframe);
+      caption.textContent = v.title;
+      lightbox.classList.add('is-open');
+      closeBtn.focus();
+    }
+    function closeLightbox() {
+      lightbox.classList.remove('is-open', 'is-expanded');
+      frame.innerHTML = '';
+      caption.textContent = '';
+    }
+    expandBtn.addEventListener('click', () => lightbox.classList.toggle('is-expanded'));
+    closeBtn.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && lightbox.classList.contains('is-open')) closeLightbox();
+    });
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>
