@@ -119,7 +119,7 @@
       z-index: 1000;
     }
     .lightbox.is-open { opacity: 1; visibility: visible; }
-    .lightbox.is-expanded { padding: 12px; }
+    .lightbox.is-expanded { padding: 8px; }
     .lightbox__inner {
       position: relative;
       width: 100%;
@@ -128,8 +128,17 @@
       transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1), max-width 0.28s ease;
     }
     .lightbox.is-open .lightbox__inner { transform: translateY(0) scale(1); }
-    /* Expanded ("fill") state — push the player to the max the iframe area allows */
-    .lightbox.is-expanded .lightbox__inner { max-width: 100%; }
+    /* Expanded ("fill") state — size the player from HEIGHT so it uses all
+       available vertical space; width follows the 16:9 ratio and the whole
+       thing stays centered. This makes a taller Hub iframe translate directly
+       into a bigger video. */
+    .lightbox.is-expanded .lightbox__inner {
+      max-width: none;
+      width: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
     .lightbox__frame {
       position: relative;
       width: 100%;
@@ -139,9 +148,12 @@
       overflow: hidden;
       box-shadow: 0 24px 60px rgba(0,0,0,0.5);
     }
-    /* When expanded, let the frame use available height rather than be width-bound */
+    /* When expanded, drive size from height: fill the available height
+       (minus room for the caption), width auto-follows 16:9. */
     .lightbox.is-expanded .lightbox__frame {
-      max-height: calc(100vh - 90px);
+      width: auto;
+      height: calc(100vh - 70px);
+      max-width: 100%;
     }
     .lightbox__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
     .lightbox__caption {
@@ -206,7 +218,7 @@
     //   (e.g. measuring.html), and replace the list below.
     // ===================================================================
     const videos = [
-      { title: "MapMaker celebration at the Royal Geographic Association, London.", entry: "1_708v3yfy" },
+      { title: "MapMaker celebration at Royal Geographic Association, London.", entry: "1_708v3yfy" },
       { title: "UK teachers explain the impact and benefits of teaching with MapMaker", entry: "1_jgrq6zt0" },
     ];
 
