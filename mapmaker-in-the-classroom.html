@@ -128,17 +128,9 @@
       transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1), max-width 0.28s ease;
     }
     .lightbox.is-open .lightbox__inner { transform: translateY(0) scale(1); }
-    /* Expanded ("fill") state — size the player from HEIGHT so it uses all
-       available vertical space; width follows the 16:9 ratio and the whole
-       thing stays centered. This makes a taller Hub iframe translate directly
-       into a bigger video. */
-    .lightbox.is-expanded .lightbox__inner {
-      max-width: none;
-      width: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+    /* Expanded ("fill") state — widen toward the full area, but the frame's
+       own max-height keeps the whole 16:9 video visible (never clipped). */
+    .lightbox.is-expanded .lightbox__inner { max-width: 100%; }
     .lightbox__frame {
       position: relative;
       width: 100%;
@@ -147,13 +139,13 @@
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+      margin: 0 auto;
     }
-    /* When expanded, drive size from height: fill the available height
-       (minus room for the caption), width auto-follows 16:9. */
+    /* Cap the frame's height to the viewport so it never overflows; because
+       aspect-ratio is fixed, width auto-reduces to match, keeping the whole
+       video on screen. */
     .lightbox.is-expanded .lightbox__frame {
-      width: auto;
-      height: calc(100vh - 70px);
-      max-width: 100%;
+      max-height: calc(100vh - 80px);
     }
     .lightbox__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
     .lightbox__caption {
