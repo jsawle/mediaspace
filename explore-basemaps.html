@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Explore Basemaps — Video Gallery</title>
+  <style>
+    :root {
+      --ng-yellow: #FFCC00;
+      --ink: #1a1a1a;
+      --ink-soft: #4a4a4a;
+      --card-bg: #ffffff;
+      --page-bg: #ffffff;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: var(--page-bg);
+      font-family: 'Avenir Next', Avenir, 'Segoe UI', system-ui, sans-serif;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    .gallery-shell { max-width: 1180px; margin: 0 auto; padding: 28px 24px 48px; }
+
+    /* --- Grid (centred so a single card sits centered, not corner-pinned) --- */
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 22px;
+    }
+    .grid .card { flex: 0 0 360px; max-width: 360px; }
+    @media (max-width: 560px) { .grid .card { flex: 0 0 100%; max-width: 100%; } }
+
+    /* --- Card --- */
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      border: 2px solid transparent;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .card:hover, .card:focus-visible {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+      border-color: #000000;
+      outline: none;
+    }
+
+    .thumb {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #2b2b2b;
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+    }
+    .thumb::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.35), rgba(0,0,0,0) 55%);
+      opacity: 0;
+      transition: opacity 0.22s ease;
+    }
+    .card:hover .thumb::after { opacity: 1; }
+
+    .play {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.55);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.22s ease, transform 0.22s ease;
+      z-index: 2;
+    }
+    .card:hover .play { background: var(--ng-yellow); transform: translate(-50%, -50%) scale(1.06); }
+    .play svg { width: 26px; height: 26px; margin-left: 3px; }
+    .play path { fill: #ffffff; transition: fill 0.22s ease; }
+    .card:hover .play path { fill: #1a1a1a; }
+
+    .caption {
+      padding: 14px 16px 16px;
+      border-top: 3px solid var(--ng-yellow);
+    }
+    .caption h3 {
+      font-size: 1.02rem;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--ink);
+    }
+
+    /* --- Lightbox --- */
+    .lightbox {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.82);
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 40px 24px;
+      z-index: 1000;
+    }
+    .lightbox.is-open { display: flex; }
+    .lightbox-inner { position: relative; width: 100%; max-width: 1000px; }
+    .lightbox.is-expanded .lightbox-inner { max-width: none; }
+    .lightbox-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+    }
+    .lightbox.is-expanded .lightbox-frame {
+      aspect-ratio: auto;
+      height: calc(100vh - 130px);
+    }
+    .lightbox-frame iframe {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%; border: 0;
+    }
+    .lightbox-caption {
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-top: 14px;
+      text-align: center;
+    }
+    .lb-controls {
+      position: absolute;
+      top: -34px; right: 0;
+      display: flex; gap: 10px;
+    }
+    .lb-btn {
+      width: 30px; height: 30px;
+      border: 0; border-radius: 5px;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.18s ease;
+    }
+    .lb-btn:hover { background: var(--ng-yellow); color: #1a1a1a; }
+    .lb-btn svg { width: 16px; height: 16px; fill: currentColor; }
+  </style>
+</head>
+<body>
+  <div class="gallery-shell">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true">
+    <div class="lightbox-inner">
+      <div class="lb-controls">
+        <button class="lb-btn" id="expandBtn" title="Expand" aria-label="Expand">
+          <svg viewBox="0 0 24 24"><path d="M4 4h6V2H2v8h2V4zm16 0v6h2V2h-8v2h6zM4 20v-6H2v8h8v-2H4zm16 0h-6v2h8v-8h-2v6z"/></svg>
+        </button>
+        <button class="lb-btn" id="closeBtn" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div class="lightbox-frame" id="lbFrame"></div>
+      <div class="lightbox-caption" id="lbCaption"></div>
+    </div>
+  </div>
+
+  <script>
+    const PARTNER_ID = '3057483';
+    const UICONF_ID  = '49806163';
+
+    const videos = [
+      { title: "How to change the basemap", entry: "1_gjat1xlp" }
+    ];
+
+    const embedUrl = (entry) =>
+      `https://mediaspace.esri.com/embed/secure/iframe/entryId/${entry}/uiConfId/${UICONF_ID}`;
+    const thumbUrl = (entry) =>
+      `https://www.kaltura.com/p/${PARTNER_ID}/thumbnail/entry_id/${entry}/width/640/height/360/type/1`;
+
+    const grid = document.getElementById('grid');
+    videos.forEach((v) => {
+      const card = document.createElement('button');
+      card.className = 'card';
+      card.type = 'button';
+      card.setAttribute('aria-label', `Play: ${v.title}`);
+      card.innerHTML = `
+        <div class="thumb" style="background-image:url('${thumbUrl(v.entry)}')">
+          <span class="play">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </span>
+        </div>
+        <div class="caption"><h3>${escapeHtml(v.title)}</h3></div>`;
+      card.addEventListener('click', () => openLightbox(v));
+      grid.appendChild(card);
+    });
+
+    const lightbox  = document.getElementById('lightbox');
+    const frame     = document.getElementById('lbFrame');
+    const caption   = document.getElementById('lbCaption');
+    const expandBtn = document.getElementById('expandBtn');
+    const closeBtn  = document.getElementById('closeBtn');
+
+    function openLightbox(v) {
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute('src', embedUrl(v.entry));
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('allow', 'autoplay *; fullscreen *; encrypted-media *');
+      iframe.setAttribute('referrerPolicy', 'no-referrer-when-downgrade');
+      iframe.setAttribute('title', v.title);
+      frame.innerHTML = '';
+      frame.appendChild(iframe);
+      caption.textContent = v.title;
+      lightbox.classList.add('is-open');
+      closeBtn.focus();
+    }
+    function closeLightbox() {
+      lightbox.classList.remove('is-open', 'is-expanded');
+      frame.innerHTML = '';
+      caption.textContent = '';
+    }
+    expandBtn.addEventListener('click', () => lightbox.classList.toggle('is-expanded'));
+    closeBtn.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && lightbox.classList.contains('is-open')) closeLightbox();
+    });
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>
