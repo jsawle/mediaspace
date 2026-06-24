@@ -131,6 +131,15 @@
       position: absolute; inset: 0;
       width: 100%; height: 100%; border: 0;
     }
+    /* Optional overlay over the player's broken bottom-right fullscreen button */
+    .fs-cover {
+      position: absolute;
+      right: 0; bottom: 0;
+      width: 48px; height: 44px;
+      background: transparent;
+      z-index: 5;
+      cursor: default;
+    }
     .lightbox-caption {
       color: #1a1a1a;
       font-size: 1.05rem;
@@ -164,9 +173,6 @@
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true">
     <div class="lightbox-inner">
       <div class="lb-controls">
-        <button class="lb-btn" id="expandBtn" title="Expand" aria-label="Expand">
-          <svg viewBox="0 0 24 24"><path d="M4 4h6V2H2v8h2V4zm16 0v6h2V2h-8v2h6zM4 20v-6H2v8h8v-2H4zm16 0h-6v2h8v-8h-2v6z"/></svg>
-        </button>
         <button class="lb-btn" id="closeBtn" title="Close" aria-label="Close">
           <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
@@ -218,8 +224,12 @@
     const lightbox  = document.getElementById('lightbox');
     const frame     = document.getElementById('lbFrame');
     const caption   = document.getElementById('lbCaption');
-    const expandBtn = document.getElementById('expandBtn');
     const closeBtn  = document.getElementById('closeBtn');
+
+    // Set true to overlay the player's broken bottom-right fullscreen button.
+    // NOTE: sits over the player's bottom-right corner; may also overlap the
+    // gear/quality controls depending on player width. Leave false unless needed.
+    const COVER_FULLSCREEN_BUTTON = false;
 
     function openLightbox(v) {
       const iframe = document.createElement('iframe');
@@ -230,8 +240,14 @@
       iframe.setAttribute('title', v.title);
       frame.innerHTML = '';
       frame.appendChild(iframe);
+      if (COVER_FULLSCREEN_BUTTON) {
+        const cover = document.createElement('div');
+        cover.className = 'fs-cover';
+        cover.setAttribute('aria-hidden', 'true');
+        frame.appendChild(cover);
+      }
       caption.textContent = v.title;
-      lightbox.classList.add('is-open');
+      lightbox.classList.add('is-open', 'is-expanded');  // open large immediately
       closeBtn.focus();
     }
     function closeLightbox() {
@@ -239,7 +255,6 @@
       frame.innerHTML = '';
       caption.textContent = '';
     }
-    expandBtn.addEventListener('click', () => lightbox.classList.toggle('is-expanded'));
     closeBtn.addEventListener('click', closeLightbox);
     lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
     document.addEventListener('keydown', (e) => {
