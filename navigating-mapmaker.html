@@ -181,9 +181,12 @@
       color: #fff;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: background 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+      transition: background 0.18s ease, color 0.18s ease, opacity 0.35s ease, visibility 0.35s ease;
       z-index: 6;
+      opacity: 1;
     }
+    /* Fade arrows out when the lightbox is idle (no recent mouse movement) */
+    .lightbox.is-idle .lb-nav { opacity: 0; visibility: hidden; }
     .lb-nav:hover { background: var(--ng-yellow); color: #1a1a1a; }
     .lb-nav svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
     .lb-prev { left: -22px; }
@@ -301,17 +304,32 @@
       loadVideo(i);
       lightbox.classList.add('is-open');  // sizing auto-fits viewport
       closeBtn.focus();
+      wake();  // start visible, then begin idle countdown
     }
     function closeLightbox() {
-      lightbox.classList.remove('is-open');
+      lightbox.classList.remove('is-open', 'is-idle');
       frame.innerHTML = '';
       caption.textContent = '';
       currentIndex = -1;
+      clearTimeout(idleTimer);
     }
     function step(delta) {
       const next = currentIndex + delta;
       if (next >= 0 && next < videos.length) loadVideo(next);
+      wake();
     }
+
+    // Fade arrows with mouse activity (mirrors the player's own controls,
+    // which we can't read across the iframe). Show on move, hide after idle.
+    let idleTimer = null;
+    function wake() {
+      lightbox.classList.remove('is-idle');
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        if (lightbox.classList.contains('is-open')) lightbox.classList.add('is-idle');
+      }, 2500);
+    }
+    lightbox.addEventListener('mousemove', wake);
 
     closeBtn.addEventListener('click', closeLightbox);
     prevBtn.addEventListener('click', () => step(-1));
