@@ -19,7 +19,15 @@
       color: var(--ink);
       -webkit-font-smoothing: antialiased;
     }
-    .gallery-shell { max-width: 1180px; margin: 0 auto; padding: 28px 24px 48px; }
+    .gallery-shell { max-width: 1180px; margin: 0 auto; padding: 16px 24px 48px; }
+    .gallery-title {
+      text-align: center;
+      font-family: 'Avenir Next', Avenir, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 26px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin: 0 0 20px;
+    }
 
     /* --- Grid (centred so a single card sits centered, not corner-pinned) --- */
     .grid {
@@ -160,6 +168,7 @@
 </head>
 <body>
   <div class="gallery-shell">
+    <h1 class="gallery-title">Explore Basemaps</h1>
     <div class="grid" id="grid"></div>
   </div>
 
