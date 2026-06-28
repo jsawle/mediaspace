@@ -114,18 +114,17 @@
     .lightbox-inner {
       position: relative;
       width: 100%;
-      max-width: 1000px;
+      /* Cap width so the 16:9 frame + control bar + caption never exceed the
+         viewport height. 92vh budget; subtract ~96px for player control bar +
+         caption + breathing room, then convert remaining height to 16:9 width. */
+      max-width: min(1100px, calc((92vh - 96px) * 16 / 9));
+      margin: 0 auto;
     }
-    .lightbox.is-expanded .lightbox-inner { max-width: none; }
     .lightbox-frame {
       position: relative;
       width: 100%;
       aspect-ratio: 16 / 9;
       background: #ffffff;
-    }
-    .lightbox.is-expanded .lightbox-frame {
-      aspect-ratio: auto;
-      height: calc(100vh - 130px);
     }
     .lightbox-frame iframe {
       position: absolute; inset: 0;
@@ -247,11 +246,11 @@
         frame.appendChild(cover);
       }
       caption.textContent = v.title;
-      lightbox.classList.add('is-open', 'is-expanded');  // open large immediately
+      lightbox.classList.add('is-open');  // sizing auto-fits viewport (see .lightbox-inner max-width)
       closeBtn.focus();
     }
     function closeLightbox() {
-      lightbox.classList.remove('is-open', 'is-expanded');
+      lightbox.classList.remove('is-open');
       frame.innerHTML = '';
       caption.textContent = '';
     }
